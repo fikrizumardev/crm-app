@@ -55,6 +55,27 @@ $routes->group('', ['filter' => ['auth', 'forcepassword']], static function (Rou
     $routes->post('notifications/read-all', 'NotificationController::readAll');
     $routes->get('notifications/(:num)', 'NotificationController::open/$1');
 
+    // Produk: semua peran melihat, admin mengelola
+    $routes->get('products', 'ProductController::index', ['as' => 'products']);
+    $routes->group('products', ['filter' => 'role:admin'], static function (RouteCollection $routes): void {
+        $routes->get('new', 'ProductController::new');
+        $routes->post('/', 'ProductController::create');
+        $routes->get('(:num)/edit', 'ProductController::edit/$1');
+        $routes->post('(:num)', 'ProductController::update/$1');
+        $routes->post('(:num)/delete', 'ProductController::delete/$1');
+    });
+
+    // Penawaran
+    $routes->get('quotations', 'QuotationController::index', ['as' => 'quotations']);
+    $routes->get('quotations/new', 'QuotationController::new');
+    $routes->post('quotations', 'QuotationController::create');
+    $routes->get('quotations/(:num)', 'QuotationController::show/$1');
+    $routes->get('quotations/(:num)/edit', 'QuotationController::edit/$1');
+    $routes->get('quotations/(:num)/print', 'QuotationController::print/$1');
+    $routes->post('quotations/(:num)', 'QuotationController::update/$1');
+    $routes->post('quotations/(:num)/status', 'QuotationController::status/$1');
+    $routes->post('quotations/(:num)/delete', 'QuotationController::delete/$1');
+
     // Alihkan owner massal (admin & manager)
     $routes->post('(leads|deals|companies|contacts)/reassign', 'ReassignController::reassign/$1', ['filter' => 'role:admin,manager']);
 

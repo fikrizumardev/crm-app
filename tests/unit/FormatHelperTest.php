@@ -64,6 +64,20 @@ final class FormatHelperTest extends CIUnitTestCase
         $this->assertNull(wa_link(null));
     }
 
+    public function testTerbilangDanRupiahRingkas(): void
+    {
+        $this->assertSame('nol', terbilang(0));
+        $this->assertSame('sebelas', terbilang(11));
+        $this->assertSame('seratus dua puluh lima', terbilang(125));
+        $this->assertSame('seribu sembilan ratus sembilan puluh sembilan', terbilang(1999));
+        $this->assertSame('empat ratus delapan puluh lima juta', terbilang(485000000));
+        $this->assertSame('satu miliar dua ratus lima puluh juta seratus ribu', terbilang('1250100000.00'));
+
+        $this->assertSame('Rp 7,3 M', rupiah_ringkas(7316000000));
+        $this->assertSame('Rp 485 jt', rupiah_ringkas(485000000));
+        $this->assertSame('Rp 950.000', rupiah_ringkas(950000));
+    }
+
     public function testNpwp(): void
     {
         $this->assertSame('01.234.567.8-901.234', format_npwp('012345678901234'));

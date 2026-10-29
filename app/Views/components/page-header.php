@@ -23,7 +23,7 @@
     <?php endif ?>
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="min-w-0">
-            <h1 class="truncate text-2xl font-semibold text-slate-900"><?= esc($title) ?></h1>
+            <h1 class="break-words text-2xl font-semibold text-slate-900 sm:truncate"><?= esc($title) ?></h1>
             <?php if (! empty($subtitle)): ?>
                 <p class="mt-1 text-sm text-slate-500"><?= esc($subtitle) ?></p>
             <?php endif ?>

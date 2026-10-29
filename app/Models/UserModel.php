@@ -34,6 +34,15 @@ class UserModel extends Model
         'role'          => ['label' => 'Peran', 'rules' => 'required|in_list[admin,manager,sales]'],
         'manager_id'    => ['label' => 'Manager', 'rules' => 'permit_empty|is_natural_no_zero|is_not_unique[users.id]'],
     ];
+    protected $afterInsert = ['clearScopeCache'];
+    protected $afterUpdate = ['clearScopeCache'];
+    protected $afterDelete = ['clearScopeCache'];
+
+    /**
+     * @var array<int, list<int>>
+     */
+    private array $scopeCache = [];
+
     protected $validationMessages = [
         'username' => [
             'regex_match' => 'Username 4–30 karakter: huruf kecil, angka, titik, atau garis bawah.',
@@ -57,18 +66,37 @@ class UserModel extends Model
             return null;
         }
 
-        if ($user->isManager()) {
-            $team = $this->builder()
+        if (! $user->isManager()) {
+            return [(int) $user->id];
+        }
+
+        // Dipanggil per baris di halaman daftar (canEdit/canDelete): simpan hasil per request.
+        if (! array_key_exists($user->id, $this->scopeCache)) {
+            $team = $this->db->table($this->table)
                 ->select('id')
                 ->where('manager_id', $user->id)
                 ->where('deleted_at', null)
                 ->get()
                 ->getResultArray();
 
-            return array_values(array_unique([(int) $user->id, ...array_map('intval', array_column($team, 'id'))]));
+            $this->scopeCache[$user->id] = array_values(array_unique([(int) $user->id, ...array_map('intval', array_column($team, 'id'))]));
         }
 
-        return [(int) $user->id];
+        return $this->scopeCache[$user->id];
+    }
+
+    /**
+     * Hapus cache cakupan tim setelah data user berubah (mis. manager sales diganti).
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    protected function clearScopeCache(array $data): array
+    {
+        $this->scopeCache = [];
+
+        return $data;
     }
 
     /**

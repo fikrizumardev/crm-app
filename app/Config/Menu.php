@@ -33,8 +33,8 @@ class Menu extends BaseConfig
                 ['label' => 'Pipeline', 'url' => 'deals/board', 'icon' => 'squares-2x2', 'match' => 'deals/board'],
                 ['label' => 'Deal', 'url' => 'deals', 'icon' => 'banknotes', 'match' => ['deals', 'deals/new', 'deals/[0-9]*']],
                 ['label' => 'Tugas', 'url' => 'tasks', 'icon' => 'clipboard-document-check', 'match' => 'tasks*'],
-                ['label' => 'Penawaran', 'url' => 'quotations', 'icon' => 'document-text', 'match' => 'quotations*', 'soon' => true],
-                ['label' => 'Produk', 'url' => 'products', 'icon' => 'cube', 'match' => 'products*', 'soon' => true],
+                ['label' => 'Penawaran', 'url' => 'quotations', 'icon' => 'document-text', 'match' => 'quotations*'],
+                ['label' => 'Produk', 'url' => 'products', 'icon' => 'cube', 'match' => 'products*'],
             ],
         ],
         [

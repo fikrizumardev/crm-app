@@ -10,6 +10,7 @@ use App\Models\ContactModel;
 use App\Models\DealModel;
 use App\Models\LostReasonModel;
 use App\Models\PipelineStageModel;
+use App\Models\QuotationModel;
 use App\Models\TaskModel;
 use App\Models\UserModel;
 use CodeIgniter\Exceptions\PageNotFoundException;
@@ -20,6 +21,11 @@ class DealController extends BaseController
 {
     private const FIELDS  = ['title', 'company_id', 'contact_id', 'amount', 'stage_id', 'probability', 'expected_close_date', 'lost_reason_id', 'owner_id'];
     private const FILTERS = ['q', 'stage', 'status', 'owner', 'close_from', 'close_to', 'min_amount', 'sort', 'dir'];
+
+    /**
+     * Maksimal kartu per kolom Kanban; sisanya dibuka lewat tampilan tabel.
+     */
+    private const BOARD_LIMIT = 50;
 
     private DealModel $deals;
 
@@ -48,15 +54,16 @@ class DealController extends BaseController
     {
         $user    = $this->currentUser();
         $ownerId = ! $user->isSales() && ctype_digit((string) $this->request->getGet('owner')) ? (int) $this->request->getGet('owner') : null;
-        $stages  = model(PipelineStageModel::class)->ordered();
+        $totals  = $this->deals->boardTotals($user, $ownerId);
         $columns = [];
 
-        foreach ($stages as $stage) {
-            $columns[$stage['id']] = ['stage' => $stage, 'deals' => []];
-        }
-
-        foreach ($this->deals->forBoard($user, $ownerId) as $deal) {
-            $columns[$deal['stage_id']]['deals'][] = $deal;
+        foreach (model(PipelineStageModel::class)->ordered() as $stage) {
+            $columns[$stage['id']] = [
+                'stage' => $stage,
+                'deals' => $this->deals->forBoardStage($user, $ownerId, (int) $stage['id'], self::BOARD_LIMIT),
+                'count' => $totals[(int) $stage['id']]['count'] ?? 0,
+                'sum'   => $totals[(int) $stage['id']]['sum'] ?? 0.0,
+            ];
         }
 
         return view('deals/board', [
@@ -82,6 +89,7 @@ class DealController extends BaseController
             'history'     => $this->deals->stageHistory($id),
             'activities'  => $activities,
             'tasks'       => model(TaskModel::class)->forRecord('deal', $id, $user),
+            'quotations'  => model(QuotationModel::class)->forDeal($id, $user),
             'stages'      => model(PipelineStageModel::class)->ordered(),
             'lostReasons' => model(LostReasonModel::class)->options(),
             'assignees'   => $user->isSales() ? [] : model(UserModel::class)->ownerOptions($user),

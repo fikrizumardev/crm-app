@@ -135,13 +135,13 @@ class DealModel extends OwnedModel
     }
 
     /**
-     * Deal untuk papan Kanban: semua deal terbuka + deal Won/Lost yang ditutup 30 hari terakhir.
+     * Kondisi papan Kanban: deal terbuka + deal Won/Lost yang ditutup 30 hari terakhir.
      *
-     * @return list<array<string, mixed>>
+     * @return $this
      */
-    public function forBoard(User $user, ?int $ownerId = null): array
+    private function boardScope(User $user, ?int $ownerId): static
     {
-        $this->withRelations()->visibleTo($user)
+        $this->visibleTo($user)
             ->groupStart()
             ->groupStart()->where('pipeline_stages.is_won', 0)->where('pipeline_stages.is_lost', 0)->groupEnd()
             ->orWhere('deals.closed_at >=', Time::today()->subDays(30)->toDateTimeString())
@@ -151,10 +151,44 @@ class DealModel extends OwnedModel
             $this->where('deals.owner_id', $ownerId);
         }
 
-        return $this->orderBy('deals.expected_close_date IS NULL', '', false)
+        return $this;
+    }
+
+    /**
+     * Kartu satu kolom Kanban (dibatasi agar halaman tetap ringan pada data besar).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function forBoardStage(User $user, ?int $ownerId, int $stageId, int $limit): array
+    {
+        return $this->withRelations()->boardScope($user, $ownerId)
+            ->where('deals.stage_id', $stageId)
+            ->orderBy('deals.expected_close_date IS NULL', '', false)
             ->orderBy('deals.expected_close_date', 'ASC')
             ->orderBy('deals.id', 'ASC')
+            ->findAll($limit);
+    }
+
+    /**
+     * Jumlah dan total nilai deal per tahap untuk papan Kanban.
+     *
+     * @return array<int, array{count: int, sum: float}>
+     */
+    public function boardTotals(User $user, ?int $ownerId): array
+    {
+        $rows = $this->select('deals.stage_id, COUNT(*) AS total, COALESCE(SUM(deals.amount), 0) AS amount')
+            ->join('pipeline_stages', 'pipeline_stages.id = deals.stage_id')
+            ->boardScope($user, $ownerId)
+            ->groupBy('deals.stage_id')
             ->findAll();
+
+        $totals = [];
+
+        foreach ($rows as $row) {
+            $totals[(int) $row['stage_id']] = ['count' => (int) $row['total'], 'sum' => (float) $row['amount']];
+        }
+
+        return $totals;
     }
 
     /**

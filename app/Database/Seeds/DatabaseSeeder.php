@@ -5,7 +5,8 @@ namespace App\Database\Seeds;
 use CodeIgniter\Database\Seeder;
 
 /**
- * Seeder lengkap untuk demo/development (PRD §8).
+ * Seeder lengkap untuk demo/development: 11 seeder sesuai urutan PRD §8.
+ * Untuk server produksi gunakan ProductionSeeder.
  */
 class DatabaseSeeder extends Seeder
 {
@@ -21,5 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(DealSeeder::class);
         $this->call(ActivitySeeder::class);
         $this->call(TaskSeeder::class);
+        $this->call(QuotationSeeder::class);
     }
 }

@@ -41,7 +41,7 @@ $roleColor  = ['admin' => 'purple', 'manager' => 'indigo', 'sales' => 'blue'];
     </div>
 <?php endif ?>
 
-<form method="get" action="<?= site_url('admin/users') ?>" class="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-4">
+<form method="get" action="<?= site_url('admin/users') ?>" class="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
     <div class="sm:col-span-2">
         <label for="filter-q" class="mb-1 block text-xs font-medium text-slate-500">Cari</label>
         <input id="filter-q" type="search" name="q" value="<?= esc($filters['q'] ?? '', 'attr') ?>" placeholder="Nama, username, email" class="<?= $inputClass ?>">

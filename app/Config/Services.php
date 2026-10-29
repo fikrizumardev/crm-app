@@ -14,6 +14,8 @@ use App\Models\LoginAttemptModel;
 use App\Models\LostReasonModel;
 use App\Models\NotificationModel;
 use App\Models\PipelineStageModel;
+use App\Models\ProductModel;
+use App\Models\QuotationModel;
 use App\Models\TaskModel;
 use App\Models\UserModel;
 use App\Services\ActivityService;
@@ -29,6 +31,7 @@ use App\Services\LeadImportService;
 use App\Services\LeadService;
 use App\Services\MasterDataService;
 use App\Services\NotificationService;
+use App\Services\QuotationService;
 use App\Services\ReassignService;
 use App\Services\ReportService;
 use App\Services\TaskService;
@@ -225,5 +228,14 @@ class Services extends BaseService
         }
 
         return new MasterDataService(db_connect(), static::auditLogger());
+    }
+
+    public static function quotationService(bool $getShared = true): QuotationService
+    {
+        if ($getShared) {
+            return static::getSharedInstance('quotationService');
+        }
+
+        return new QuotationService(model(QuotationModel::class), model(ProductModel::class), static::auditLogger(), db_connect());
     }
 }

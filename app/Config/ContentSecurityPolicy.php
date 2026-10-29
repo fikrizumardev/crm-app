@@ -13,6 +13,14 @@ use CodeIgniter\Config\BaseConfig;
  *
  * @see https://www.html5rocks.com/en/tutorials/security/content-security-policy/
  */
+/**
+ * CSP aplikasi (PRD §9). Skrip hanya dari domain sendiri + CDN yang dikunci versinya; skrip inline wajib nonce.
+ * - `unsafe-eval` dibutuhkan Alpine.js (ekspresi x-data/@click dievaluasi lewat Function).
+ * - Style memakai `unsafe-inline` tanpa nonce karena Tailwind Play CDN menyuntik <style> saat runtime
+ *   (bila ada nonce, browser mengabaikan unsafe-inline).
+ * - Di development CSP hanya report-only: Kint & Debug Toolbar (aktif saat CI_DEBUG) menambahkan nonce style
+ *   yang bentrok dengan Tailwind CDN. Di production CI_DEBUG mati sehingga kebijakan ditegakkan penuh.
+ */
 class ContentSecurityPolicy extends BaseConfig
 {
     // -------------------------------------------------------------------------
@@ -22,7 +30,7 @@ class ContentSecurityPolicy extends BaseConfig
     /**
      * Default CSP report context
      */
-    public bool $reportOnly = false;
+    public bool $reportOnly = ENVIRONMENT === 'development';
 
     /**
      * Specifies a URL where a browser will send reports
@@ -52,21 +60,21 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $defaultSrc;
+    public $defaultSrc = 'self';
 
     /**
      * Lists allowed scripts' URLs.
      *
      * @var list<string>|string
      */
-    public $scriptSrc = 'self';
+    public $scriptSrc = ['self', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net', 'unsafe-eval'];
 
     /**
      * Specifies valid sources for JavaScript <script> elements.
      *
      * @var list<string>|string
      */
-    public array|string $scriptSrcElem = 'self';
+    public array|string $scriptSrcElem = ['self', 'https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net'];
 
     /**
      * Specifies valid sources for JavaScript inline event
@@ -74,21 +82,21 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public array|string $scriptSrcAttr = 'self';
+    public array|string $scriptSrcAttr = 'none';
 
     /**
      * Lists allowed stylesheets' URLs.
      *
      * @var list<string>|string
      */
-    public $styleSrc = 'self';
+    public $styleSrc = ['self', 'unsafe-inline'];
 
     /**
      * Specifies valid sources for stylesheets <link> elements.
      *
      * @var list<string>|string
      */
-    public array|string $styleSrcElem = 'self';
+    public array|string $styleSrcElem = ['self', 'unsafe-inline'];
 
     /**
      * Specifies valid sources for stylesheets inline
@@ -96,14 +104,14 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public array|string $styleSrcAttr = 'self';
+    public array|string $styleSrcAttr = 'unsafe-inline';
 
     /**
      * Defines the origins from which images can be loaded.
      *
      * @var list<string>|string
      */
-    public $imageSrc = 'self';
+    public $imageSrc = ['self', 'data:', 'blob:'];
 
     /**
      * Restricts the URLs that can appear in a page's `<base>` element.
@@ -112,7 +120,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $baseURI;
+    public $baseURI = 'self';
 
     /**
      * Lists the URLs for workers and embedded frame contents
@@ -134,7 +142,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $fontSrc;
+    public $fontSrc = 'self';
 
     /**
      * Lists valid endpoints for submission from `<form>` tags.
@@ -151,7 +159,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string|null
      */
-    public $frameAncestors;
+    public $frameAncestors = 'self';
 
     /**
      * The frame-src directive restricts the URLs which may
@@ -173,7 +181,7 @@ class ContentSecurityPolicy extends BaseConfig
      *
      * @var list<string>|string
      */
-    public $objectSrc = 'self';
+    public $objectSrc = 'none';
 
     /**
      * @var list<string>|string|null

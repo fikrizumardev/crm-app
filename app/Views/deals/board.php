@@ -3,7 +3,7 @@
 use App\Entities\User;
 
 /**
- * @var array<int, array{stage: array<string, mixed>, deals: list<array<string, mixed>>}> $columns
+ * @var array<int, array{stage: array<string, mixed>, deals: list<array<string, mixed>>, count: int, sum: float}> $columns
  * @var array<int, string> $lostReasons
  * @var array<int, string> $owners
  * @var int|null           $ownerId
@@ -13,6 +13,7 @@ $today  = date('Y-m-d');
 $config = [
     'baseUrl'      => site_url('deals'),
     'lostStageIds' => array_values(array_map('strval', array_keys(array_filter($columns, static fn ($c): bool => (int) $c['stage']['is_lost'] === 1)))),
+    'totals'       => array_map(static fn ($c): array => ['count' => $c['count'], 'sum' => $c['sum']], $columns),
 ];
 
 $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('deals'), 'icon' => 'banknotes', 'variant' => 'secondary'])
@@ -23,7 +24,7 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
 <?= $this->section('content') ?>
 <?= component('page-header', [
     'title'    => 'Pipeline',
-    'subtitle' => 'Geser kartu untuk memindahkan deal antar tahap. Kolom Won dan Lost menampilkan deal yang ditutup 30 hari terakhir.',
+    'subtitle' => 'Geser kartu untuk memindahkan deal antar tahap. Kolom Won dan Lost berisi deal yang ditutup 30 hari terakhir; tiap kolom menampilkan maksimal 50 kartu.',
     'actions'  => $actions,
 ]) ?>
 
@@ -56,10 +57,10 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
                             <?= esc($stage['name']) ?>
                             <span class="text-xs font-normal text-slate-500"><?= (int) $stage['probability'] ?>%</span>
                         </h2>
-                        <span class="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-600" x-text="totals['<?= $stageId ?>']?.count ?? 0"><?= count($column['deals']) ?></span>
+                        <span class="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-600" x-text="(totals['<?= $stageId ?>']?.count ?? 0).toLocaleString('id-ID')"><?= angka($column['count']) ?></span>
                     </div>
                     <p class="mt-1 text-sm font-semibold text-slate-700" x-text="crm.rupiah(totals['<?= $stageId ?>']?.sum ?? 0)">
-                        <?= rupiah(array_sum(array_column($column['deals'], 'amount'))) ?>
+                        <?= rupiah($column['sum']) ?>
                     </p>
                 </header>
                 <div class="flex min-h-[8rem] flex-1 flex-col gap-2 px-2 pb-3" data-stage-list data-stage-id="<?= $stageId ?>">
@@ -84,6 +85,11 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
                         </article>
                     <?php endforeach ?>
                 </div>
+                <?php if ($column['count'] > count($column['deals'])): ?>
+                    <a href="<?= esc(site_url('deals?stage=' . $stageId . ($ownerId !== null ? '&owner=' . $ownerId : '')), 'attr') ?>" class="mx-2 mb-3 rounded-md px-2 py-1.5 text-center text-xs font-medium text-brand-700 hover:bg-white">
+                        +<?= angka($column['count'] - count($column['deals'])) ?> deal lainnya — lihat di tabel
+                    </a>
+                <?php endif ?>
             </section>
         <?php endforeach ?>
     </div>
@@ -121,12 +127,11 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
 <script <?= csp_script_nonce() ?>>
     document.addEventListener('alpine:init', () => {
         Alpine.data('kanbanBoard', (config) => ({
-            totals: {},
+            totals: config.totals,
             lostModal: false,
             lostReason: '',
             pending: null,
             init() {
-                this.recalc();
                 this.$root.querySelectorAll('[data-stage-list]').forEach((list) => {
                     Sortable.create(list, {
                         group: 'deals',
@@ -138,20 +143,19 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
                     });
                 });
             },
-            recalc() {
-                const totals = {};
-                this.$root.querySelectorAll('[data-stage-list]').forEach((list) => {
-                    const cards = [...list.querySelectorAll('[data-id]')];
-                    totals[list.dataset.stageId] = {
-                        count: cards.length,
-                        sum: cards.reduce((sum, card) => sum + Number(card.dataset.amount || 0), 0),
-                    };
-                });
-                this.totals = totals;
+            // Total kolom dihitung server (kolom bisa berisi lebih banyak deal daripada kartu yang tampil).
+            shift(item, fromId, toId) {
+                const amount = Number(item.dataset.amount || 0);
+                const from = this.totals[fromId];
+                const to = this.totals[toId] ?? (this.totals[toId] = { count: 0, sum: 0 });
+                from.count -= 1;
+                from.sum -= amount;
+                to.count += 1;
+                to.sum += amount;
             },
             dropped(evt) {
                 if (evt.from === evt.to) return;
-                this.recalc();
+                this.shift(evt.item, evt.from.dataset.stageId, evt.to.dataset.stageId);
                 const move = { evt, dealId: evt.item.dataset.id, stageId: evt.to.dataset.stageId };
                 if (config.lostStageIds.includes(move.stageId)) {
                     this.pending = move;
@@ -187,7 +191,7 @@ $actions = component('button', ['label' => 'Tampilan tabel', 'url' => site_url('
             },
             revert(evt) {
                 evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
-                this.recalc();
+                this.shift(evt.item, evt.to.dataset.stageId, evt.from.dataset.stageId);
             },
         }));
     });

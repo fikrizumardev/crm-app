@@ -291,6 +291,35 @@ if (! function_exists('persen')) {
     }
 }
 
+if (! function_exists('terbilang')) {
+    /**
+     * Angka dalam kata Bahasa Indonesia, mis. `1250000` → `satu juta dua ratus lima puluh ribu`.
+     * Pecahan desimal diabaikan (dibulatkan ke rupiah terdekat).
+     */
+    function terbilang(float|int|string $angka): string
+    {
+        $angka = (int) round(abs((float) $angka));
+        $words = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+
+        $convert = static function (int $n) use (&$convert, $words): string {
+            return match (true) {
+                $n < 12             => $words[$n],
+                $n < 20             => $convert($n - 10) . ' belas',
+                $n < 100            => $convert(intdiv($n, 10)) . ' puluh ' . $convert($n % 10),
+                $n < 200            => 'seratus ' . $convert($n - 100),
+                $n < 1000           => $convert(intdiv($n, 100)) . ' ratus ' . $convert($n % 100),
+                $n < 2000           => 'seribu ' . $convert($n - 1000),
+                $n < 1000000        => $convert(intdiv($n, 1000)) . ' ribu ' . $convert($n % 1000),
+                $n < 1000000000     => $convert(intdiv($n, 1000000)) . ' juta ' . $convert($n % 1000000),
+                $n < 1000000000000  => $convert(intdiv($n, 1000000000)) . ' miliar ' . $convert($n % 1000000000),
+                default             => $convert(intdiv($n, 1000000000000)) . ' triliun ' . $convert($n % 1000000000000),
+            };
+        };
+
+        return $angka === 0 ? 'nol' : trim((string) preg_replace('/\s+/', ' ', $convert($angka)));
+    }
+}
+
 if (! function_exists('angka')) {
     /**
      * Format bilangan bulat dengan pemisah ribuan titik, mis. `1.250`.

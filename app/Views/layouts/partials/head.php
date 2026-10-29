@@ -31,7 +31,7 @@
         },
     };
 </script>
-<style <?= csp_style_nonce() ?>>
+<style>
     [x-cloak] { display: none !important; }
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.17.5/dist/cdn.min.js"></script>

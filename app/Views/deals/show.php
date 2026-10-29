@@ -1,12 +1,14 @@
 <?php
 
 use App\Models\DealModel;
+use App\Models\QuotationModel;
 
 /**
  * @var array<string, mixed>       $deal
  * @var list<array<string, mixed>> $history
  * @var list<array<string, mixed>> $activities
  * @var list<array<string, mixed>> $tasks
+ * @var list<array<string, mixed>> $quotations
  * @var list<array<string, mixed>> $stages
  * @var array<int, string>         $lostReasons
  * @var array<int, string>         $assignees
@@ -89,6 +91,34 @@ $lostStageIds = array_column(array_filter($stages, static fn ($s): bool => (int)
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
     <div class="space-y-6 lg:col-span-2">
+        <section class="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
+                <h2 class="text-sm font-semibold text-slate-800">Penawaran</h2>
+                <?php if ($canEdit): ?>
+                    <?= component('button', ['label' => 'Buat penawaran', 'url' => site_url('quotations/new?deal=' . $deal['id']), 'icon' => 'plus', 'variant' => 'secondary']) ?>
+                <?php endif ?>
+            </div>
+            <?php if ($quotations === []): ?>
+                <?= component('empty-state', ['icon' => 'document-text', 'title' => 'Belum ada penawaran', 'message' => 'Buat penawaran harga dari katalog produk untuk deal ini.']) ?>
+            <?php else: ?>
+                <ul class="divide-y divide-slate-100">
+                    <?php foreach ($quotations as $quotation): ?>
+                        <?php $qStatus = QuotationModel::STATUSES[$quotation['status']] ?>
+                        <li class="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <a href="<?= site_url('quotations/' . $quotation['id']) ?>" class="font-mono text-sm font-medium text-slate-900 hover:text-brand-700"><?= esc($quotation['number']) ?></a>
+                                <p class="text-xs text-slate-500"><?= tanggal_id($quotation['issue_date']) ?> · berlaku s.d. <?= tanggal_id($quotation['valid_until']) ?></p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="whitespace-nowrap text-sm font-semibold text-slate-800"><?= rupiah($quotation['grand_total']) ?></span>
+                                <?= component('badge', ['label' => $qStatus['label'], 'color' => $qStatus['color']]) ?>
+                            </div>
+                        </li>
+                    <?php endforeach ?>
+                </ul>
+            <?php endif ?>
+        </section>
+
         <section class="rounded-lg border border-slate-200 bg-white shadow-sm">
             <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
                 <h2 class="text-sm font-semibold text-slate-800">Aktivitas</h2>

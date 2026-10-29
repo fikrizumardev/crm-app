@@ -307,60 +307,64 @@ Daftar pekerjaan implementasi berdasarkan [PRD.md](PRD.md). Urutan mengikuti ren
 
 ### Produk & penawaran (M8, P1)
 
-- [ ] **T5.01 CRUD Produk** — PRD §4 M8
+- [x] **T5.01 CRUD Produk** — PRD §4 M8
   - SKU unik, nama, satuan, harga, aktif/nonaktif; produk nonaktif tidak muncul di form penawaran.
 
-- [ ] **T5.02 Penawaran (Quotation)** — PRD §4 M8
+- [x] **T5.02 Penawaran (Quotation)** — PRD §4 M8
   - Buat dari halaman detail deal; nomor otomatis `QUO/YYYY/MM/NNNN` (reset per bulan, aman dari race condition).
   - Item dinamis (Alpine): pilih produk atau deskripsi bebas, qty, harga, diskon %; subtotal, PPN (dari pengaturan), grand total dihitung di klien untuk tampilan dan dihitung ulang di server (`QuotationService`) sebagai sumber kebenaran.
   - Status: Draft, Terkirim, Diterima, Ditolak.
 
-- [ ] **T5.03 Cetak penawaran** — PRD §4 M8
+- [x] **T5.03 Cetak penawaran** — PRD §4 M8
   - Halaman print-friendly (`@media print`) dengan logo, data perusahaan, item, total, dan masa berlaku; simpan PDF lewat dialog print browser.
 
-- [ ] **T5.04 QuotationSeeder** — PRD §8
+- [x] **T5.04 QuotationSeeder** — PRD §8
   - 30 penawaran untuk deal tahap Proposal ke atas, 2–6 item tiap penawaran.
 
 ### Penyelesaian seeder
 
-- [ ] **T5.05 DatabaseSeeder & ProductionSeeder** — PRD §8
+- [x] **T5.05 DatabaseSeeder & ProductionSeeder** — PRD §8
   - `DatabaseSeeder` memanggil 11 seeder sesuai urutan PRD §8.
   - `ProductionSeeder`: setting + master data + 1 admin dengan password acak dicetak di terminal (`CLI::write`), `must_change_password = 1`.
   - **AC:** dari database kosong, `php spark migrate && php spark db:seed DatabaseSeeder` selesai < 1 menit tanpa error.
 
 ### Kualitas & keamanan
 
-- [ ] **T5.06 Content Security Policy** — PRD §9
+- [x] **T5.06 Content Security Policy** — PRD §9
   - Aktifkan CSP di `Config/ContentSecurityPolicy.php`; izinkan `cdn.tailwindcss.com` dan `cdn.jsdelivr.net` (Alpine, SortableJS, Chart.js).
   - Kunci versi semua skrip CDN (mis. `alpinejs@3.x.x`, `chart.js@4.x.x`).
 
-- [ ] **T5.07 Audit keamanan mandiri** — PRD §9
+- [x] **T5.07 Audit keamanan mandiri** — PRD §9
   - Cek setiap rute: filter auth/role, scope owner, `esc()` di view, CSRF di semua POST, tidak ada SQL mentah dari input.
   - Uji IDOR: akses `/leads/{id}`, `/deals/{id}` milik user lain sebagai sales.
 
-- [ ] **T5.08 Performa** — PRD §2, §9
+- [x] **T5.08 Performa** — PRD §2, §9
   - Generate 10.000 baris lead/deal (seeder khusus `PerformanceSeeder`, tidak dipanggil `DatabaseSeeder`) dan pastikan halaman daftar < 1 detik.
   - Cek N+1 dengan Debug Toolbar.
+  - **Hasil:** semua halaman daftar 0,4–0,7 detik dengan 10.000 lead + 10.000 deal; Kanban dibatasi 50 kartu/kolom (6 detik → 0,7 detik); indeks `deleted_at, created_at` ditambahkan; test penjaga N+1 di `ReleaseReadinessTest`.
 
-- [ ] **T5.09 Lengkapi test suite** — PRD §9
+- [x] **T5.09 Lengkapi test suite** — PRD §9
   - Pastikan semua feature test Fase 1–5 lulus; tambahkan test penomoran dan perhitungan penawaran.
 
-- [ ] **T5.10 Responsif & polishing UI**
+- [x] **T5.10 Responsif & polishing UI**
   - Uji di lebar 375 px, 768 px, 1280 px; empty state di semua daftar; konsistensi badge dan tombol.
 
 ### Dokumentasi & rilis
 
-- [ ] **T5.11 README.md**
+- [x] **T5.11 README.md**
   - Kebutuhan server, langkah instalasi (< 10 menit), daftar akun demo, perintah migrasi/seeder, cara deploy ke shared hosting (document root `public/`).
 
 - [ ] **T5.12 UAT dengan tim sales**
   - Skenario uji per peran (admin, manager, sales) berdasarkan PRD §4; catat temuan sebagai issue dan perbaiki yang blocking.
+  - **Disiapkan:** skenario & lembar hasil di [UAT.md](UAT.md). Menunggu sesi UAT bersama tim sales.
 
 - [ ] **T5.13 Deploy produksi**
   - `composer install --no-dev --optimize-autoloader` (Faker tetap terpasang karena ada di `require`), `CI_ENVIRONMENT=production`, `php spark migrate`, `php spark db:seed ProductionSeeder`, HTTPS aktif, permission folder `writable/`.
+  - **Disiapkan:** langkah lengkap & checklist di [DEPLOY.md](DEPLOY.md). Menunggu server produksi.
 
 - [ ] **T5.14 Go-live v1.0**
   - Admin mengganti password awal, membuat akun tim, dan menjalankan smoke test (login, buat lead, pindah deal, cetak penawaran).
+  - **Disiapkan:** checklist go-live di [DEPLOY.md](DEPLOY.md#checklist-go-live-v10).
 
 > **Go-live v1.0:** semua task P0 selesai, UAT tanpa temuan blocking, deploy produksi berjalan.
 
