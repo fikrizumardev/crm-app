@@ -1,0 +1,8 @@
+# Folder unggahan hanya untuk file gambar statis: jangan jalankan skrip apa pun.
+<FilesMatch "\.(php|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes -ExecCGI
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
